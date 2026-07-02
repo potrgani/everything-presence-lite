@@ -23,9 +23,8 @@ esphome:
           }
 
 esp32:
-  board: esp32-c3-supermini
-  framework:
-    type: esp-idf
+  board: esp32-c3-devkitm-1
+
 
 # Enable logging
 logger:
