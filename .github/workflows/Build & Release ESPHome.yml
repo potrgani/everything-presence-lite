@@ -1,0 +1,56 @@
+name: Build & Release ESPHome
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        file:
+          - everything-presence-lite-ha.yaml
+          - everything-presence-lite-ha-no-ble.yaml
+          - everything-presence-lite-ha-ld2410.yaml
+          - everything-presence-lite-ha-ld2410-no-ble.yaml
+          - everything-presence-lite-ha-sen0395.yaml
+          - everything-presence-lite-ha-sen0395-no-ble.yaml
+          - everything-presence-lite-ha-sen0609.yaml
+          - everything-presence-lite-ha-sen0609-no-ble.yaml
+          - everything-presence-lite-ha-mr24hpc1.yaml
+          - everything-presence-lite-ha-mr24hpc1-no-ble.yaml
+          - everything-presence-lite-ha-co2.yaml
+          - everything-presence-lite-ha-no-ble-co2.yaml
+          - everything-presence-lite-ha-ld2410-co2.yaml
+          - everything-presence-lite-ha-ld2410-no-ble-co2.yaml
+          - everything-presence-lite-ha-sen0395-co2.yaml
+          - everything-presence-lite-ha-sen0395-no-ble-co2.yaml
+          - everything-presence-lite-ha-sen0609-co2.yaml
+          - everything-presence-lite-ha-sen0609-no-ble-co2.yaml
+          - everything-presence-lite-ha-mr24hpc1-co2.yaml
+          - everything-presence-lite-ha-mr24hpc1-no-ble-co2.yaml
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: esphome/build-action@v6
+        id: build
+        with:
+          yaml-file: ${{ matrix.file }}
+          version: latest
+
+      - name: Prepare artifact
+        run: |
+          NAME=$(basename "${{ matrix.file }}" .yaml)
+          mkdir -p output/$NAME
+          mv "${{ steps.build.outputs.name }}" output/$NAME
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.file }}
+          path: output
