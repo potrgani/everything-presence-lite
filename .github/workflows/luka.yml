@@ -217,7 +217,7 @@ jobs:
       clean: false
       esphome_version: latest
       directory_name: everything-presence-lite-ha-mr24hpc1-no-ble-co2
- release:
+  release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
     needs:
