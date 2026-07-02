@@ -1,0 +1,82 @@
+name: Build & Release ESPHome Firmware
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+concurrency:
+  group: esphome-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    outputs:
+      artifact-name: ${{ steps.meta.outputs.artifact }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Discover YAML files
+        id: meta
+        run: |
+          FILES=$(find . -maxdepth 1 -name "*.yaml" \
+            ! -name "*base*.yaml" \
+            ! -name "*example*.yaml" \
+            | jq -R -s -c 'split("\n") | map(select(length>0))')
+
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+
+          # single artifact group name
+          echo "artifact=esp-firmware-${GITHUB_RUN_ID}" >> $GITHUB_OUTPUT
+
+      - name: Build all firmware
+        run: |
+          mkdir -p dist
+
+          echo '${{ steps.meta.outputs.files }}' | jq -r '.[]' | while read file; do
+            echo "Building $file"
+
+            name=$(basename "$file" .yaml)
+
+            esphome compile "$file"
+
+            mkdir -p "dist/$name"
+            mv .esphome/build/*/*.bin "dist/$name/" 2>/dev/null || true
+            mv .esphome/build/*/*.elf "dist/$name/" 2>/dev/null || true
+
+          done
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp-firmware
+          path: dist
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: esp-firmware
+          path: dist
+
+      - name: Debug structure
+        run: ls -R dist
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ESPHome Firmware ${{ github.ref_name }}
+          files: dist/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
