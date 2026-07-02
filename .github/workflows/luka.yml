@@ -1,0 +1,47 @@
+name: Build all ESPHome firmware
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  find-files:
+    runs-on: ubuntu-latest
+    outputs:
+      files: ${{ steps.set.outputs.files }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: set
+        run: |
+          files=$(find . -name "*.yaml" | grep -v ".github" | jq -R -s -c 'split("\n")[:-1]')
+          echo "files=$files" >> $GITHUB_OUTPUT
+
+  build:
+    name: Build ${{ matrix.file }}
+    needs: find-files
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        file: ${{ fromJson(needs.find-files.outputs.files) }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build ESPHome firmware
+        id: build
+        uses: esphome/build-action@v6
+        with:
+          yaml-file: ${{ matrix.file }}
+
+      - name: Collect firmware
+        run: |
+          mkdir -p output
+          mv "${{ steps.build.outputs.name }}" output/
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ matrix.file }}
+          path: output
