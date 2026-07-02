@@ -23,11 +23,9 @@ esphome:
           }
 
 esp32:
-  board: esp32dev
+  board: esp32-c3-supermini
   framework:
     type: esp-idf
-    advanced:
-      sram1_as_iram: true
 
 # Enable logging
 logger:
@@ -82,6 +80,7 @@ ota:
 http_request:
 
 wifi:
+  output_power: 8.5dB
 
 improv_serial:
 
