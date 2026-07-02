@@ -85,8 +85,8 @@ improv_serial:
 
 i2c:
 -  id: bus_a
-   sda: 21
-   scl: 22
+   sda: 8
+   scl: 9
    scan: true
 
 light:
