@@ -14,27 +14,25 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    outputs:
-      artifact-name: ${{ steps.meta.outputs.artifact }}
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+
+      # 🔥 FIX: install ESPHome CLI
+      - name: Install ESPHome
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install esphome
 
       - name: Discover YAML files
         id: meta
         run: |
           FILES=$(find . -maxdepth 1 -name "*.yaml" \
-            ! -name "*base*.yaml" \
-            ! -name "*example*.yaml" \
             | jq -R -s -c 'split("\n") | map(select(length>0))')
 
           echo "files=$FILES" >> $GITHUB_OUTPUT
 
-          # single artifact group name
-          echo "artifact=esp-firmware-${GITHUB_RUN_ID}" >> $GITHUB_OUTPUT
-
-      - name: Build all firmware
+      - name: Build firmware
         run: |
           mkdir -p dist
 
@@ -46,8 +44,10 @@ jobs:
             esphome compile "$file"
 
             mkdir -p "dist/$name"
-            mv .esphome/build/*/*.bin "dist/$name/" 2>/dev/null || true
-            mv .esphome/build/*/*.elf "dist/$name/" 2>/dev/null || true
+
+            # move firmware files safely
+            find .esphome/build -name "*.bin" -exec cp {} "dist/$name/" \;
+            find .esphome/build -name "*.elf" -exec cp {} "dist/$name/" \;
 
           done
 
@@ -69,10 +69,7 @@ jobs:
           name: esp-firmware
           path: dist
 
-      - name: Debug structure
-        run: ls -R dist
-
-      - name: Create GitHub Release
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
