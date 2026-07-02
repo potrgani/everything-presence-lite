@@ -89,14 +89,7 @@ i2c:
    scl: 9
    scan: true
 
-light:
-  - platform: status_led
-    name: ESP32 LED
-    id: esp32_led
-    pin: GPIO14
-    internal: False
-    restore_mode: ALWAYS_OFF
-    entity_category: config
+
 
 number:
   - platform: template
