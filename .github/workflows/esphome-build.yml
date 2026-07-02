@@ -28,13 +28,15 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       files: ${{ steps.set.outputs.files }}
+  
     steps:
-      - uses: actions/checkout@v4
-
       - id: set
         run: |
-          files=$(echo "${{ inputs.files }}" | jq -Rcn 'inputs | split(",")')
-          echo "files=$files" >> $GITHUB_OUTPUT
+          FILES="everything-presence-lite-ha.yaml,everything-presence-lite-ha-no-ble.yaml,everything-presence-lite-ha-ld2410.yaml,everything-presence-lite-ha-ld2410-no-ble.yaml,everything-presence-lite-ha-sen0395.yaml,everything-presence-lite-ha-sen0395-no-ble.yaml,everything-presence-lite-ha-sen0609.yaml,everything-presence-lite-ha-sen0609-no-ble.yaml,everything-presence-lite-ha-mr24hpc1.yaml,everything-presence-lite-ha-mr24hpc1-no-ble.yaml,everything-presence-lite-ha-co2.yaml,everything-presence-lite-ha-no-ble-co2.yaml,everything-presence-lite-ha-ld2410-co2.yaml,everything-presence-lite-ha-ld2410-no-ble-co2.yaml,everything-presence-lite-ha-sen0395-co2.yaml,everything-presence-lite-ha-sen0395-no-ble-co2.yaml,everything-presence-lite-ha-sen0609-co2.yaml,everything-presence-lite-ha-sen0609-no-ble-co2.yaml,everything-presence-lite-ha-mr24hpc1-co2.yaml,everything-presence-lite-ha-mr24hpc1-no-ble-co2.yaml"
+  
+          JSON=$(echo "$FILES" | jq -Rc 'split(",") | map(gsub("^ *| *$"; ""))')
+  
+          echo "files=$JSON" >> $GITHUB_OUTPUT
 
   build:
     runs-on: ubuntu-latest
