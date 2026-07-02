@@ -1,0 +1,46 @@
+name: Build ESPHome firmware (BIN only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      files:
+        description: Comma-separated list of files to build
+        required: true
+        type: string
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      files: ${{ steps.files-array.outputs.files }}
+    steps:
+      - id: files-array
+        run: |
+          files=$(echo "${{ inputs.files }}" | jq -Rcn 'inputs | . / ","')
+          echo "files=$files" >> $GITHUB_OUTPUT
+
+  build:
+    name: Build ${{ matrix.file }}
+    needs: [prepare]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        file: ${{ fromJson(needs.prepare.outputs.files) }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: esphome/build-action@v6
+        id: build
+        with:
+          yaml-file: ${{ matrix.file }}
+
+      - name: Collect BIN
+        run: |
+          mkdir -p output
+          mv "${{ steps.build.outputs.name }}" output/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: esphome-bins
+          path: output
